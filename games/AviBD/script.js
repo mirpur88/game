@@ -48,20 +48,22 @@ function notify(text, type = 'info') {
     note.className = `notification ${type}`;
     note.style.cssText = `
         background: ${type === 'win' ? '#2ecc71' : '#ff2d55'};
-        color: white;
-        padding: 10px 20px;
-        border-radius: 8px;
-        margin-top: 10px;
-        font-weight: bold;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        animation: slideIn 0.3s forwards;
+        color: white; padding: 12px 25px; border-radius: 12px;
+        margin-bottom: 10px; font-weight: 900; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        transform: translateY(-20px); opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     `;
     note.innerText = text;
     area.appendChild(note);
+
     setTimeout(() => {
-        note.style.animation = 'slideOut 0.3s forwards';
+        note.style.transform = 'translateY(0)';
+        note.style.opacity = '1';
+    }, 10);
+    setTimeout(() => {
+        note.style.transform = 'translateY(-20px)';
+        note.style.opacity = '0';
         setTimeout(() => note.remove(), 300);
-    }, 3000);
+    }, 4000);
 }
 
 // Initialization
@@ -84,8 +86,8 @@ function init() {
 function startWaitingCycle() {
     gameState = 'waiting';
     waitingTime = 5;
-    multiplierDisplay.innerText = 'WAITING...';
-    multiplierDisplay.style.fontSize = '4rem';
+    multiplierDisplay.innerHTML = '<span class="waiting-title">WAITING...</span>';
+    multiplierDisplay.style.fontSize = ''; // Let CSS handle it
 
     updateMainButtonUI();
 
@@ -96,8 +98,8 @@ function startWaitingCycle() {
             takeoff();
         } else {
             multiplierDisplay.innerHTML = `
-                <div style="font-size: 2.2rem; line-height: 1; letter-spacing: 0;">NEXT ROUND IN</div>
-                <div style="font-size: 5.5rem; line-height: 1.2;">${waitingTime}s</div>
+                <div class="waiting-title">NEXT ROUND IN</div>
+                <div class="waiting-timer">${waitingTime}</div>
             `;
         }
     }, 1000);
@@ -321,7 +323,7 @@ function updateMainButtonUI() {
 
 function takeoff() {
     gameState = 'flying';
-    multiplierDisplay.style.fontSize = '7.5rem';
+    multiplierDisplay.style.fontSize = ''; // Let CSS handle it
 
     // Check if there's a queued bet for this round
     if (nextRoundBet !== null) {
@@ -535,9 +537,7 @@ function addExampleHistory() {
 
 const style = document.createElement('style');
 style.textContent = `
-    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
-    #notification-area { position: fixed; top: 20px; right: 20px; z-index: 1000; pointer-events: none; }
+    #notification-area { position: fixed; top: 100px; right: 20px; z-index: 1000; pointer-events: none; }
 `;
 document.head.appendChild(style);
 
