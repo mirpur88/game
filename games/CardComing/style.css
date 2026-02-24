@@ -69,9 +69,8 @@ body {
     transition: all 0.2s;
 }
 
-.header-home-btn svg {
-    width: 24px;
-    height: 24px;
+.header-home-btn i {
+    font-size: 1.2rem;
 }
 
 .logo {
