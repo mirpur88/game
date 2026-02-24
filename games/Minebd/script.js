@@ -6,6 +6,14 @@ const CONFIG = {
     BONE_IMG: 'https://cdn-icons-png.flaticon.com/256/1020/1020216.png'
 };
 
+const CUSTOM_MULT = {
+    1: [1.01, 1.05, 1.10, 1.15, 1.21, 1.28, 1.35, 1.43, 1.52],
+    3: [1.10, 1.26, 1.45, 1.68, 1.96, 2.30, 2.73, 3.28, 3.98, 4.70, 5.88, 7.48, 9.72],
+    5: [1.21, 1.53, 1.96, 2.53, 3.32, 4.25, 5.77, 7.98, 11.31, 16.45, 24.68, 38.39, 62.39, 106.95],
+    10: [1.62, 2.77, 4.70, 8.62, 16.45, 32.91, 69.47, 156.31, 379.61, 1012.3],
+    20: [4.65, 27.90, 213.90, 2352.90, 49410.9]
+};
+
 // State
 let balance = GameBridge.getBalance();
 let currentBet = 10;
@@ -60,20 +68,30 @@ function updateMultipliers() {
     const mines = parseInt(mineSelect.value);
     multipliers = [];
 
-    // Calculate 20 steps of multipliers (or up to safe grid count)
+    const customList = CUSTOM_MULT[mines] || [];
+    const maxSteps = Math.min(CONFIG.GRID_SIZE - mines, 20);
+
     let currentMult = 1;
-    const maxSteps = Math.min(25 - mines, 20);
+    // Standard formula fallback if custom list runs out
+    const houseEdge = 0.97;
 
     for (let i = 1; i <= maxSteps; i++) {
-        const prob = (CONFIG.GRID_SIZE - mines - (i - 1)) / (CONFIG.GRID_SIZE - (i - 1));
-        currentMult *= (0.97 / prob);
+        const stepIdx = i - 1;
+
+        if (customList[stepIdx]) {
+            currentMult = customList[stepIdx];
+        } else {
+            const prob = (CONFIG.GRID_SIZE - mines - (i - 1)) / (CONFIG.GRID_SIZE - (i - 1));
+            currentMult *= (houseEdge / prob);
+        }
+
         multipliers.push(currentMult);
 
         const step = document.createElement('div');
         step.className = 'step-card';
         step.innerHTML = `
             <div style="font-size: 0.6rem; opacity: 0.6;">STEP ${i}</div>
-            <div>${currentMult.toFixed(2)}x</div>
+            <div style="font-weight: 950; color: ${mines >= 5 ? 'var(--accent-yellow)' : 'inherit'}">${currentMult.toFixed(2)}x</div>
         `;
         multiplierTrack.appendChild(step);
     }
@@ -192,7 +210,10 @@ async function handleTileClick(index) {
         // Update Multiplier UX
         const stepCards = document.querySelectorAll('.step-card');
         stepCards.forEach(s => s.classList.remove('active'));
-        if (stepCards[stepIdx]) stepCards[stepIdx].classList.add('active');
+        if (stepCards[stepIdx]) {
+            stepCards[stepIdx].classList.add('active');
+            stepCards[stepIdx].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
 
         // Enable Cashout
         cashoutBtn.disabled = false;
@@ -255,16 +276,20 @@ function notify(text, type) {
         background: ${type === 'win' ? '#2ecc71' : '#ff2d55'};
         color: white; padding: 12px 25px; border-radius: 12px;
         margin-bottom: 10px; font-weight: 900; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-        transform: translateX(120%); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transform: translateY(-20px); opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     `;
     note.innerText = text;
     area.appendChild(note);
 
-    setTimeout(() => note.style.transform = 'translateX(0)', 10);
     setTimeout(() => {
-        note.style.transform = 'translateX(120%)';
+        note.style.transform = 'translateY(0)';
+        note.style.opacity = '1';
+    }, 10);
+    setTimeout(() => {
+        note.style.transform = 'translateY(-20px)';
+        note.style.opacity = '0';
         setTimeout(() => note.remove(), 300);
-    }, 3000);
+    }, 4000);
 }
 
 init();
