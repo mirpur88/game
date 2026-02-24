@@ -284,6 +284,20 @@ function openGame(url, vipRequired, name) {
             } catch (e) { console.error("URL Parse error", e); }
         }
 
+        // --- SINGLE GAME LOCK ---
+        // Generate a unique ID for this specific game instance
+        const instanceId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+        simpleAuth.currentGameInstanceId = instanceId;
+
+        // Update DB to notify other tabs/devices to close their games
+        supabase.from('profiles')
+            .update({ active_game_id: instanceId })
+            .eq('id', simpleAuth.currentUser.id)
+            .then(({ error }) => {
+                if (error) console.error('Failed to set active_game_id:', error);
+            });
+        // -------------------------
+
         iframe.src = finalUrl;
         modal.style.display = 'block';
         document.body.style.overflow = 'hidden';
@@ -299,6 +313,17 @@ function closeGameModal() {
     console.log('Closing game modal and refreshing balance...');
     const modal = document.getElementById('gamePlayModal');
     const iframe = document.getElementById('gameIframe');
+
+    // Clear active game ID in DB when closed manually
+    if (typeof simpleAuth !== 'undefined' && simpleAuth.currentUser) {
+        supabase.from('profiles')
+            .update({ active_game_id: null })
+            .eq('id', simpleAuth.currentUser.id)
+            .then(() => {
+                simpleAuth.currentGameInstanceId = null;
+            });
+    }
+
     if (modal && iframe) {
         iframe.src = '';
         modal.style.display = 'none';
