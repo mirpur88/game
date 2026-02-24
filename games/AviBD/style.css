@@ -252,7 +252,7 @@ body {
 
 .multiplier-display {
     font-family: var(--font-display);
-    font-size: 8rem;
+    font-size: var(--multiplier-fs, 4rem);
     font-weight: 950;
     z-index: 100;
     color: white;
@@ -315,12 +315,14 @@ body {
     transform: translateX(-50%);
     color: var(--accent-red);
     font-family: var(--font-display);
-    font-size: 4rem;
+    font-size: var(--crash-fs, 4rem);
     font-weight: 900;
     display: none;
     z-index: 50;
     text-shadow: 0 0 20px rgba(252, 214, 0, 0.5);
     text-transform: uppercase;
+    white-space: nowrap;
+    text-align: center;
 }
 
 /* Controls */
@@ -635,8 +637,23 @@ input:checked+.slider:before {
 
     /* Multiplier display smaller on mobile */
     .multiplier-display {
-        font-size: 5rem !important;
+        font-size: var(--multiplier-fs, 3.5rem) !important;
         margin-top: -80px;
+    }
+
+    .crash-text {
+        font-size: 1.8rem;
+        top: 15%;
+        width: auto;
+    }
+
+    /* Styles for the "WAITING" and "NEXT ROUND" text inside multiplier display */
+    .multiplier-display .waiting-title {
+        font-size: 1.5rem !important;
+    }
+
+    .multiplier-display .waiting-timer {
+        font-size: 3.5rem !important;
     }
 
     /* Smaller plane */
