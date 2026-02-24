@@ -3,8 +3,14 @@ class SimpleAuth {
     constructor() {
         this.currentUser = null;
         this.profileSubscription = null;
-        this.lastManualUpdate = 0; // Timestamp of last local balance update
+        this.lastManualUpdate = 0;
+        this.sessionId = localStorage.getItem('active_session_id') || this.generateSessionId();
+        localStorage.setItem('active_session_id', this.sessionId);
         this.init();
+    }
+
+    generateSessionId() {
+        return Math.random().toString(36).substring(2) + Date.now().toString(36);
     }
 
     async init() {
@@ -145,7 +151,7 @@ class SimpleAuth {
             // Insert user
             const { data, error } = await supabase
                 .from('profiles')
-                .insert([userData])
+                .insert([{ ...userData, last_session_id: this.sessionId }])
                 .select()
                 .single();
 
@@ -241,6 +247,15 @@ class SimpleAuth {
             }
 
             // Login successful
+            // Generate NEW session ID on every fresh manual login
+            this.sessionId = this.generateSessionId();
+            localStorage.setItem('active_session_id', this.sessionId);
+
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ last_session_id: this.sessionId })
+                .eq('id', user.id);
+
             this.currentUser = user;
             localStorage.setItem('casino_user', JSON.stringify(user));
             this.updateUIForLoggedInUser();
@@ -307,18 +322,31 @@ class SimpleAuth {
                 table: 'profiles',
                 filter: `id=eq.${this.currentUser.id}`
             }, payload => {
-                console.log('Real-time update received:', payload.new);
+                // Check for Multiple Sessions (Device Kick)
+                if (payload.new.last_session_id && payload.new.last_session_id !== this.sessionId) {
+                    alert('Session Terminated: You have logged in from another device or browser.');
+                    this.logout();
+                    return;
+                }
 
-                // Merge new data
-                this.currentUser = { ...this.currentUser, ...payload.new };
+                // Check for Multiple Games (Game Kick)
+                if (payload.new.active_game_id && payload.new.active_game_id !== this.currentGameInstanceId) {
+                    if (document.getElementById('gamePlayModal')?.style.display === 'block') {
+                        console.warn('Another game was started elsewhere. Closing current game.');
+                        if (typeof closeGameModal === 'function') closeGameModal();
+                        alert('Game Session Ended: Another game has been started in a different window.');
+                    }
+                }
 
                 // Handle Suspension
-                if (this.currentUser.status === 'suspended') {
+                if (payload.new.status === 'suspended') {
                     alert('Session Terminated: Your account has been suspended.');
                     this.logout();
                     return;
                 }
 
+                // Merge new data
+                this.currentUser = { ...this.currentUser, ...payload.new };
                 localStorage.setItem('casino_user', JSON.stringify(this.currentUser));
                 this.updateAllUserSections();
             })
