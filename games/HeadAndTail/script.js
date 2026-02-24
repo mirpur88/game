@@ -160,16 +160,20 @@ function notify(text, type) {
         background: ${type === 'win' ? '#2ecc71' : '#ff2d55'};
         color: white; padding: 12px 25px; border-radius: 12px;
         margin-bottom: 10px; font-weight: 900; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-        transform: translateX(120%); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transform: translateY(-20px); opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     `;
     note.innerText = text;
     area.appendChild(note);
 
-    setTimeout(() => note.style.transform = 'translateX(0)', 10);
     setTimeout(() => {
-        note.style.transform = 'translateX(120%)';
+        note.style.transform = 'translateY(0)';
+        note.style.opacity = '1';
+    }, 10);
+    setTimeout(() => {
+        note.style.transform = 'translateY(-20px)';
+        note.style.opacity = '0';
         setTimeout(() => note.remove(), 300);
-    }, 3000);
+    }, 4000);
 }
 
 init();
