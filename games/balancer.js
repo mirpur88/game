@@ -80,7 +80,7 @@ const GameBridge = {
                         try {
                             const txData = {
                                 user_id: auth.currentUser.id,
-                                type: change > 0 ? 'bonus' : 'withdraw', // Using traditional types
+                                type: change > 0 ? 'game_win' : 'game_bet', // Distinct types for game activity
                                 amount: Math.abs(change),
                                 description: description || 'Game Activity',
                                 status: 'completed'
@@ -136,7 +136,7 @@ const GameBridge = {
                     try {
                         await supabase.from('transactions').insert([{
                             user_id: userId,
-                            type: change > 0 ? 'bonus' : 'withdraw',
+                            type: change > 0 ? 'game_win' : 'game_bet',
                             amount: Math.abs(change),
                             description: description || 'Game Activity',
                             status: 'completed'
