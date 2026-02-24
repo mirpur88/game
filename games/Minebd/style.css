@@ -115,10 +115,17 @@ body {
     width: 100%;
     margin-bottom: 25px;
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 8px;
     overflow-x: auto;
     padding: 10px;
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+.multiplier-track::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari, Edge */
 }
 
 .step-card {
@@ -343,7 +350,7 @@ body {
 
 #notification-area {
     position: fixed;
-    top: 20px;
+    top: 100px;
     right: 20px;
     z-index: 1000;
 }
