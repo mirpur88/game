@@ -3,6 +3,8 @@ class AdminManager {
     constructor() {
         this.isAdmin = false;
         this.chart = null;
+        this.activityLimit = 20;
+        this.maxActivityLimit = 500;
         this.init();
     }
 
@@ -372,6 +374,14 @@ class AdminManager {
 
             const avatarEl = document.querySelector('.avatar');
             if (avatarEl) avatarEl.textContent = simpleAuth.currentUser.username.charAt(0).toUpperCase();
+        }
+
+        // Load More Recent Activity
+        const loadMoreBtn = document.getElementById('loadMoreActivityBtn');
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', () => {
+                this.loadRecentActivity(true);
+            });
         }
 
         // Action Buttons
@@ -1038,18 +1048,26 @@ class AdminManager {
         });
     }
 
-    async loadRecentActivity() {
+    async loadRecentActivity(loadMore = false) {
         try {
+            if (loadMore) {
+                this.activityLimit = Math.min(this.activityLimit + 50, this.maxActivityLimit);
+            }
+
             const { data: recents, error } = await supabase
                 .from('transactions')
                 .select('*, profiles(username)')
                 .order('created_at', { ascending: false })
-                .limit(5);
+                .limit(this.activityLimit);
 
             if (recents) {
                 const tbody = document.getElementById('recentActivityBody');
                 if (!tbody) return;
-                tbody.innerHTML = recents.map(tx => `
+
+                if (recents.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">No activity found</td></tr>';
+                } else {
+                    tbody.innerHTML = recents.map(tx => `
                         <tr>
                             <td>
                                 <div style="font-weight: 500;">
@@ -1065,6 +1083,18 @@ class AdminManager {
                             <td style="font-size: 13px; color: #888;">${this.formatDateTime(tx.created_at)}</td>
                         </tr>
                     `).join('');
+                }
+
+                // Update Load More button state
+                const loadMoreBtn = document.getElementById('loadMoreActivityBtn');
+                if (loadMoreBtn) {
+                    if (recents.length < this.activityLimit || this.activityLimit >= this.maxActivityLimit) {
+                        loadMoreBtn.style.display = 'none';
+                    } else {
+                        loadMoreBtn.style.display = 'inline-block';
+                        loadMoreBtn.innerHTML = `<i class="fas fa-plus"></i> Load More (${recents.length}/${this.maxActivityLimit})`;
+                    }
+                }
             }
         } catch (e) { console.error(e); }
     }
