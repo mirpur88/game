@@ -196,18 +196,8 @@ class AdminManager {
                     }
                 }
 
-                // UI Refreshes based on active tab
-                if (this.currentTab === 'dashboardTab' || !this.currentTab) {
-                    this.loadDashboardStats();
-                }
-
-                if (this.currentTab === 'transactionsTab') {
-                    this.loadTransactions();
-                }
-
-                if (this.currentTab === 'paymentsTab') {
-                    this.loadPayments();
-                }
+                // Removed auto-refreshes to prevent interrupting the graph view
+                // Only notifications will trigger in real-time
             })
             .subscribe();
 
@@ -233,16 +223,7 @@ class AdminManager {
                     }
                 }
 
-                // UI Refreshes
-                if (this.currentTab === 'dashboardTab' || !this.currentTab) {
-                    this.loadDashboardStats();
-                }
-                if (this.currentTab === 'usersTab') {
-                    this.loadUsers();
-                }
-                if (this.currentTab === 'membersTab') {
-                    this.loadMembers();
-                }
+                // Removed auto-refreshes to prevent interrupting the graph view
             })
             .subscribe();
 
@@ -1077,8 +1058,8 @@ class AdminManager {
                                 <div style="font-size: 12px; color: #888;">${tx.type.toUpperCase()}</div>
                             </td>
                             <td>${tx.description || '-'}</td>
-                            <td style="color: ${tx.type === 'deposit' ? '#4CAF50' : '#ffcc00'}">
-                                ${tx.type === 'deposit' ? '+' : ''}${window.siteCurrency || '৳'}${tx.amount}
+                            <td style="color: ${(tx.type === 'deposit' || tx.type === 'game_win') ? '#4CAF50' : (tx.type === 'game_bet' ? '#ff5252' : '#ffcc00')}">
+                                ${(tx.type === 'deposit' || tx.type === 'game_win') ? '+' : (tx.type === 'game_bet' || tx.type === 'withdraw' ? '-' : '')}${window.siteCurrency || '৳'}${tx.amount}
                             </td>
                             <td style="font-size: 13px; color: #888;">${this.formatDateTime(tx.created_at)}</td>
                         </tr>
@@ -3185,7 +3166,7 @@ class AdminManager {
                 if (tx.type === 'deposit') {
                     s.totalDep += tx.amount;
                     if (!s.lastDep || date > s.lastDep) s.lastDep = date;
-                } else if (tx.type === 'withdrawal') {
+                } else if (tx.type === 'withdraw') {
                     s.totalWith += tx.amount;
                     if (!s.lastWith || date > s.lastWith) s.lastWith = date;
                 } else if (tx.type === 'bonus') {
@@ -3277,12 +3258,12 @@ class AdminManager {
                 // Update running balance for the NEXT (older) transaction
                 // Only account for transactions that actually changed the balance
                 const isCompleted = tx.status === 'completed';
-                const isWithdraw = tx.type === 'withdraw';
+                const isWithdraw = tx.type === 'withdraw' || tx.type === 'game_bet';
 
                 if (isCompleted || isWithdraw) {
                     const desc = (tx.description || '').toLowerCase();
                     const amount = tx.amount || 0;
-                    const isDeduction = desc.includes('bet') || desc.includes('loss') || tx.type === 'withdraw';
+                    const isDeduction = desc.includes('bet') || desc.includes('loss') || tx.type === 'withdraw' || tx.type === 'game_bet';
 
                     if (isDeduction) {
                         runningBalance += amount;
@@ -3299,7 +3280,7 @@ class AdminManager {
             historyWithBalances.forEach(tx => {
                 const row = document.createElement('tr');
                 const desc = tx.description || 'Game Activity';
-                const isLoss = desc.toLowerCase().includes('bet') || desc.toLowerCase().includes('loss') || tx.type === 'withdraw';
+                const isLoss = desc.toLowerCase().includes('bet') || desc.toLowerCase().includes('loss') || tx.type === 'withdraw' || tx.type === 'game_bet';
                 const amountColor = isLoss ? '#ff5252' : '#4CAF50';
 
                 row.innerHTML = `
